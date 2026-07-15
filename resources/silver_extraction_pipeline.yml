@@ -6,7 +6,7 @@ resources:
       schema: "${var.team_schema}"
       serverless: true
       configuration:
-        "silver.extraction_config_path": "/Workspace${workspace.file_path}/config/extraction.yml"
+        "silver.extraction_config_path": "/Workspace${workspace.file_path}/config/silver/extraction.yml"
       libraries:
         - notebook:
             path: "../src/silver/extraction_pipeline.py"
