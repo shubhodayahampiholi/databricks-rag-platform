@@ -1,0 +1,19 @@
+resources:
+  pipelines:
+    silver_extraction:
+      name: "${bundle.target}_${var.team_name}_silver_extraction"
+      catalog: "${var.team_catalog}"
+      schema: "${var.team_schema}"
+      serverless: true
+      configuration:
+        "silver.extraction_config_path": "/Workspace${workspace.file_path}/config/extraction.yml"
+      libraries:
+        - notebook:
+            path: "../src/silver/extraction_pipeline.py"
+      environment:
+        dependencies:
+          - pymupdf
+          - python-docx
+          - openpyxl
+          - azure-ai-documentintelligence
+      channel: "CURRENT"
