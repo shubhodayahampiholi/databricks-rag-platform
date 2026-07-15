@@ -1,0 +1,609 @@
+{
+    "datasets": [
+      {
+        "name": "table_metrics",
+        "displayName": "Table Metrics",
+        "queryLines": [
+          "SELECT\n",
+          "  COUNT(*) as total_files,\n",
+          "  COUNT(DISTINCT file_type) as unique_file_types,\n",
+          "  SUM(file_size) as total_size_bytes,\n",
+          "  MAX(ingestion_timestamp) as latest_ingestion,\n",
+          "  MIN(ingestion_timestamp) as first_ingestion,\n",
+          "  COUNT(\n",
+          "    CASE\n",
+          "      WHEN processing_status = 'valid' THEN 1\n",
+          "    END\n",
+          "  ) as valid_files,\n",
+          "  COUNT(\n",
+          "    CASE\n",
+          "      WHEN processing_status != 'valid' THEN 1\n",
+          "    END\n",
+          "  ) as invalid_files\n",
+          "FROM\n",
+          "  ${var.team_catalog}.${var.team_schema}.bronze_documents"
+        ],
+        "catalog": "${var.team_catalog}",
+        "schema": "${var.team_schema}"
+      },
+      {
+        "name": "file_type_distribution",
+        "displayName": "File Type Distribution",
+        "queryLines": [
+          "SELECT\n",
+          "  file_type,\n",
+          "  processing_status,\n",
+          "  COUNT(*) as file_count,\n",
+          "  SUM(file_size) as total_size_bytes,\n",
+          "  AVG(file_size) as avg_size_bytes\n",
+          "FROM\n",
+          "  ${var.team_catalog}.${var.team_schema}.bronze_documents\n",
+          "GROUP BY\n",
+          "  file_type,\n",
+          "  processing_status\n",
+          "ORDER BY\n",
+          "  file_count DESC"
+        ],
+        "catalog": "${var.team_catalog}",
+        "schema": "${var.team_schema}"
+      },
+      {
+        "name": "ingestion_timeline",
+        "displayName": "Ingestion Timeline",
+        "queryLines": [
+          "SELECT\n",
+          "  DATE_TRUNC('hour', ingestion_timestamp) as ingestion_hour,\n",
+          "  COUNT(*) as files_ingested,\n",
+          "  SUM(file_size) as total_size_bytes,\n",
+          "  COUNT(\n",
+          "    CASE\n",
+          "      WHEN processing_status = 'valid' THEN 1\n",
+          "    END\n",
+          "  ) as valid_files,\n",
+          "  COUNT(\n",
+          "    CASE\n",
+          "      WHEN processing_status != 'valid' THEN 1\n",
+          "    END\n",
+          "  ) as invalid_files\n",
+          "FROM\n",
+          "  ${var.team_catalog}.${var.team_schema}.bronze_documents\n",
+          "WHERE\n",
+          "  ingestion_timestamp >= CURRENT_TIMESTAMP - INTERVAL 7 DAYS\n",
+          "GROUP BY\n",
+          "  DATE_TRUNC('hour', ingestion_timestamp)\n",
+          "ORDER BY\n",
+          "  ingestion_hour DESC"
+        ],
+        "catalog": "${var.team_catalog}",
+        "schema": "${var.team_schema}"
+      },
+      {
+        "name": "pipeline_events",
+        "displayName": "Pipeline Event Log",
+        "queryLines": [
+          "SELECT\n",
+          "  timestamp,\n",
+          "  event_type,\n",
+          "  level,\n",
+          "  message,\n",
+          "  details:flow_name as flow_name,\n",
+          "  details:flow_type as flow_type\n",
+          "FROM\n",
+          "  event_log(TABLE(${var.team_catalog}.${var.team_schema}.bronze_documents))\n",
+          "WHERE\n",
+          "  event_type IN ('flow_progress', 'update_progress')\n",
+          "ORDER BY\n",
+          "  timestamp DESC\n",
+          "LIMIT 100"
+        ],
+        "catalog": "${var.team_catalog}",
+        "schema": "${var.team_schema}"
+      },
+      {
+        "name": "pending_files",
+        "displayName": "Pending Files Count",
+        "queryLines": [
+          "WITH source_files AS (\n",
+          "  SELECT\n",
+          "    path,\n",
+          "    length as size\n",
+          "  FROM\n",
+          "    read_files(\n",
+          "      '/Volumes/${var.team_catalog}/${var.team_schema}/${var.source_volume_name}',\n",
+          "      format => 'binaryFile',\n",
+          "      recursiveFileLookup => 'true'\n",
+          "    )\n",
+          ")\n",
+          "SELECT\n",
+          "  COUNT(*) as pending_files,\n",
+          "  COALESCE(SUM(sf.size), 0) as pending_size_bytes\n",
+          "FROM\n",
+          "  source_files sf\n",
+          "LEFT ANTI JOIN\n",
+          "  ${var.team_catalog}.${var.team_schema}.bronze_documents bd\n",
+          "  ON sf.path = bd.source_path"
+        ],
+        "catalog": "${var.team_catalog}",
+        "schema": "${var.team_schema}"
+      }
+    ],
+    "pages": [
+      {
+        "name": "4dd8e65d",
+        "displayName": "Untitled page",
+        "layout": [
+          {
+            "widget": {
+              "name": "total_files",
+              "queries": [
+                {
+                  "name": "main_query",
+                  "query": {
+                    "datasetName": "table_metrics",
+                    "fields": [
+                      {
+                        "name": "total_files",
+                        "expression": "`total_files`"
+                      }
+                    ],
+                    "disaggregated": true
+                  }
+                }
+              ],
+              "spec": {
+                "version": 2,
+                "frame": {
+                  "title": "Total Files Ingested",
+                  "showTitle": true
+                },
+                "widgetType": "counter",
+                "encodings": {
+                  "value": {
+                    "fieldName": "total_files"
+                  }
+                },
+                "data": {
+                  "queryName": "main_query"
+                }
+              }
+            },
+            "position": {
+              "x": 0,
+              "y": 0,
+              "width": 2,
+              "height": 4
+            }
+          },
+          {
+            "widget": {
+              "name": "valid_files",
+              "queries": [
+                {
+                  "name": "main_query",
+                  "query": {
+                    "datasetName": "table_metrics",
+                    "fields": [
+                      {
+                        "name": "valid_files",
+                        "expression": "`valid_files`"
+                      }
+                    ],
+                    "disaggregated": true
+                  }
+                }
+              ],
+              "spec": {
+                "version": 2,
+                "frame": {
+                  "title": "Valid Files",
+                  "showTitle": true
+                },
+                "widgetType": "counter",
+                "encodings": {
+                  "value": {
+                    "fieldName": "valid_files"
+                  }
+                },
+                "data": {
+                  "queryName": "main_query"
+                }
+              }
+            },
+            "position": {
+              "x": 2,
+              "y": 0,
+              "width": 2,
+              "height": 4
+            }
+          },
+          {
+            "widget": {
+              "name": "invalid_files",
+              "queries": [
+                {
+                  "name": "main_query",
+                  "query": {
+                    "datasetName": "table_metrics",
+                    "fields": [
+                      {
+                        "name": "invalid_files",
+                        "expression": "`invalid_files`"
+                      }
+                    ],
+                    "disaggregated": true
+                  }
+                }
+              ],
+              "spec": {
+                "version": 2,
+                "frame": {
+                  "title": "Invalid/Corrupt Files",
+                  "showTitle": true
+                },
+                "widgetType": "counter",
+                "encodings": {
+                  "value": {
+                    "fieldName": "invalid_files"
+                  }
+                },
+                "data": {
+                  "queryName": "main_query"
+                }
+              }
+            },
+            "position": {
+              "x": 4,
+              "y": 0,
+              "width": 2,
+              "height": 4
+            }
+          },
+          {
+            "widget": {
+              "name": "latest_ingestion",
+              "queries": [
+                {
+                  "name": "main_query",
+                  "query": {
+                    "datasetName": "table_metrics",
+                    "fields": [
+                      {
+                        "name": "latest_ingestion",
+                        "expression": "`latest_ingestion`"
+                      }
+                    ],
+                    "disaggregated": true
+                  }
+                }
+              ],
+              "spec": {
+                "version": 2,
+                "frame": {
+                  "title": "Latest Ingestion Time",
+                  "showTitle": true
+                },
+                "widgetType": "counter",
+                "encodings": {
+                  "value": {
+                    "fieldName": "latest_ingestion"
+                  }
+                },
+                "data": {
+                  "queryName": "main_query"
+                }
+              }
+            },
+            "position": {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 4
+            }
+          },
+          {
+            "widget": {
+              "name": "file_type_chart",
+              "queries": [
+                {
+                  "name": "main_query",
+                  "query": {
+                    "datasetName": "file_type_distribution",
+                    "fields": [
+                      {
+                        "name": "processing_status",
+                        "expression": "`processing_status`"
+                      },
+                      {
+                        "name": "file_type",
+                        "expression": "`file_type`"
+                      },
+                      {
+                        "name": "file_count",
+                        "expression": "`file_count`"
+                      }
+                    ],
+                    "disaggregated": true
+                  }
+                }
+              ],
+              "spec": {
+                "version": 3,
+                "frame": {
+                  "title": "Files by Type and Status",
+                  "showTitle": true
+                },
+                "widgetType": "bar",
+                "encodings": {
+                  "x": {
+                    "fieldName": "file_type",
+                    "scale": {
+                      "type": "categorical"
+                    }
+                  },
+                  "y": {
+                    "fieldName": "file_count",
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  },
+                  "color": {
+                    "fieldName": "processing_status",
+                    "scale": {
+                      "type": "categorical"
+                    }
+                  }
+                },
+                "data": {
+                  "queryName": "main_query"
+                }
+              }
+            },
+            "position": {
+              "x": 0,
+              "y": 4,
+              "width": 6,
+              "height": 8
+            }
+          },
+          {
+            "widget": {
+              "name": "size_distribution",
+              "queries": [
+                {
+                  "name": "main_query",
+                  "query": {
+                    "datasetName": "file_type_distribution",
+                    "fields": [
+                      {
+                        "name": "file_type",
+                        "expression": "`file_type`"
+                      },
+                      {
+                        "name": "total_size_bytes",
+                        "expression": "`total_size_bytes`"
+                      }
+                    ],
+                    "disaggregated": true
+                  }
+                }
+              ],
+              "spec": {
+                "version": 3,
+                "frame": {
+                  "title": "Storage Size by File Type",
+                  "showTitle": true
+                },
+                "widgetType": "bar",
+                "encodings": {
+                  "x": {
+                    "fieldName": "file_type",
+                    "scale": {
+                      "type": "categorical"
+                    }
+                  },
+                  "y": {
+                    "fieldName": "total_size_bytes",
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  }
+                },
+                "data": {
+                  "queryName": "main_query"
+                }
+              }
+            },
+            "position": {
+              "x": 6,
+              "y": 4,
+              "width": 6,
+              "height": 8
+            }
+          },
+          {
+            "widget": {
+              "name": "ingestion_trend",
+              "queries": [
+                {
+                  "name": "main_query",
+                  "query": {
+                    "datasetName": "ingestion_timeline",
+                    "fields": [
+                      {
+                        "name": "ingestion_hour",
+                        "expression": "`ingestion_hour`"
+                      },
+                      {
+                        "name": "files_ingested",
+                        "expression": "`files_ingested`"
+                      }
+                    ],
+                    "disaggregated": true
+                  }
+                }
+              ],
+              "spec": {
+                "version": 3,
+                "frame": {
+                  "title": "Ingestion Trend (Last 7 Days)",
+                  "showTitle": true
+                },
+                "widgetType": "line",
+                "encodings": {
+                  "x": {
+                    "fieldName": "ingestion_hour",
+                    "scale": {
+                      "type": "temporal"
+                    }
+                  },
+                  "y": {
+                    "fieldName": "files_ingested",
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  }
+                },
+                "data": {
+                  "queryName": "main_query"
+                }
+              }
+            },
+            "position": {
+              "x": 0,
+              "y": 12,
+              "width": 12,
+              "height": 8
+            }
+          },
+          {
+            "widget": {
+              "name": "pipeline_events_table",
+              "queries": [
+                {
+                  "name": "main_query",
+                  "query": {
+                    "datasetName": "pipeline_events",
+                    "fields": [
+                      {
+                        "name": "timestamp",
+                        "expression": "`timestamp`"
+                      },
+                      {
+                        "name": "level",
+                        "expression": "`level`"
+                      },
+                      {
+                        "name": "event_type",
+                        "expression": "`event_type`"
+                      },
+                      {
+                        "name": "message",
+                        "expression": "`message`"
+                      },
+                      {
+                        "name": "flow_name",
+                        "expression": "`flow_name`"
+                      }
+                    ],
+                    "disaggregated": true
+                  }
+                }
+              ],
+              "spec": {
+                "version": 2,
+                "frame": {
+                  "title": "Pipeline Event Log (Last 100 Events)",
+                  "showTitle": true
+                },
+                "widgetType": "table",
+                "encodings": {
+                  "columns": [
+                    {
+                      "fieldName": "timestamp",
+                      "useForSearch": true
+                    },
+                    {
+                      "fieldName": "level",
+                      "useForSearch": false
+                    },
+                    {
+                      "fieldName": "event_type",
+                      "useForSearch": false
+                    },
+                    {
+                      "fieldName": "message",
+                      "useForSearch": true
+                    },
+                    {
+                      "fieldName": "flow_name",
+                      "useForSearch": false
+                    }
+                  ]
+                },
+                "data": {
+                  "queryName": "main_query"
+                }
+              }
+            },
+            "position": {
+              "x": 0,
+              "y": 20,
+              "width": 12,
+              "height": 10
+            }
+          },
+          {
+            "widget": {
+              "name": "pending_files",
+              "queries": [
+                {
+                  "name": "main_query",
+                  "query": {
+                    "datasetName": "pending_files",
+                    "fields": [
+                      {
+                        "name": "pending_files",
+                        "expression": "`pending_files`"
+                      }
+                    ],
+                    "disaggregated": true
+                  }
+                }
+              ],
+              "spec": {
+                "version": 2,
+                "frame": {
+                  "title": "Pending Files",
+                  "showTitle": true
+                },
+                "widgetType": "counter",
+                "encodings": {
+                  "value": {
+                    "fieldName": "pending_files"
+                  }
+                },
+                "data": {
+                  "queryName": "main_query"
+                }
+              }
+            },
+            "position": {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 4
+            }
+          }
+        ],
+        "pageType": "PAGE_TYPE_CANVAS",
+        "layoutVersion": "GRID_V1"
+      }
+    ],
+    "uiSettings": {
+      "theme": {
+        "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+      },
+      "applyModeEnabled": false
+    }
+  }
+  

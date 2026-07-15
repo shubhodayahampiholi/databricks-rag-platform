@@ -2,5 +2,5 @@ resources:
   dashboards:
     bronze_backlog:
       display_name: "${var.team_name} Bronze Ingestion Backlog"
-      file_path: ../src/bronze/bronze_backlog.lvdash.json
+      file_path: ../src/bronze/bronze_monitoring_dashboard.lvdash.json
       warehouse_id: "${var.sql_warehouse_id}"

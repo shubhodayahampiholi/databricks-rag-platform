@@ -146,6 +146,30 @@ extraction:
   under the two-tier model — only occurs for a genuinely unsupported file
   type, not a missing team override.
 
+### The extraction checkpoint: silver_extracted_documents
+
+Extraction's actual output has nowhere to persist without this table --
+the original design jumped from bronze directly to chunked silver,
+silently skipping the fact that extraction and chunking are separate
+concerns needing separate checkpoints. This table is also what makes the
+content-hash deduplication rule actually implementable: without a real,
+queryable record of what's already been extracted, there's no state to
+check before deciding whether to re-run an expensive extraction call.
+
+```
+silver_extracted_documents
+├── content_hash            string   -- PK; same hash from bronze
+├── extraction_method_used   string
+├── extraction_status        string  -- "success" | "empty" | "corrupt"
+├── full_text                 string
+├── sections                   array<struct<heading: string, text: string, position: int>>
+├── error_message              string  -- nullable
+└── extracted_at                timestamp
+```
+Decoupling this from chunking's own output has a real practical benefit:
+if a chunking strategy changes later, re-chunking can read already-
+extracted text directly, without re-running extraction at all.
+
 ### Chunking
 
 Same two-tier default/override shape, keyed the same way as extraction.

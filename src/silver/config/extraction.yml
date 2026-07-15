@@ -7,7 +7,7 @@ extraction:
   overrides:
     - path_prefix: "contracts_scanned/"
       file_type: "pdf"
-      method: "pymupdf_ocr"
+      method: "azure_document_intelligence_ocr"
       on_failure: "atomic"
     - path_prefix: "reports_digital/"
       file_type: "pdf"
