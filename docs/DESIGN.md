@@ -65,7 +65,6 @@ processing_status             string   -- e.g. "valid", "corrupt",
                                              "unsupported_file_type" (content is
                                              STILL captured in this case -- see
                                              rationale), "no_extraction_rule_matched"
-_rescued_data                  string   -- Autoloader default; kept, never dropped
 ```
 
 **Key rationale, worth preserving verbatim for the article/repo README:**
@@ -92,8 +91,7 @@ _rescued_data                  string   -- Autoloader default; kept, never dropp
   `cloud_files_state(checkpoint_path)` (per-file discovery/processing state,
   queryable SQL, available DBR 11.3 LTS+) and the Lakeflow pipeline's own
   event log (`numFilesOutstanding`, `numBytesOutstanding` from the Streaming
-  Query Listener). Parameterized only by checkpoint path — a team supplies
-  nothing else.
+  Query Listener). Parameterized only by pipeline_id.
 - **`approximateQueueSize`** (file-notification queue depth) is the more
   honest number in the first minutes after a bulk file drop, since
   `numFilesOutstanding` only updates as of the last completed micro-batch.

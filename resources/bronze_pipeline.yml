@@ -1,0 +1,16 @@
+resources:
+  pipelines:
+    bronze_ingest:
+      name: "${bundle.target}_${var.team_name}_bronze_ingest"
+      catalog: "${var.team_catalog}"
+      schema: "${var.team_schema}"
+      serverless: true
+      configuration:
+        "bronze.source_volume_path": "/Volumes/${var.team_catalog}/${var.team_schema}/${var.source_volume_name}"
+      libraries:
+        - notebook:
+            path: "../src/bronze/ingest.py"
+      environment:
+        dependencies:
+          - pypdf
+      channel: "CURRENT"

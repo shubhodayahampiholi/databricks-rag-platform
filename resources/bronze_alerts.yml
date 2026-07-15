@@ -1,0 +1,34 @@
+resources:
+  queries:
+    bronze_backlog_check:
+      display_name: "${var.team_name} Bronze Backlog Check"
+      warehouse_id: "${var.sql_warehouse_id}"
+      query_text: >
+        WITH source_files AS (
+          SELECT path, length AS size
+          FROM read_files(
+            '/Volumes/${var.team_catalog}/${var.team_schema}/${var.source_volume_name}',
+            format => 'binaryFile',
+            recursiveFileLookup => 'true'
+          )
+        )
+        SELECT COUNT(*) AS pending_files
+        FROM source_files sf
+        LEFT ANTI JOIN ${var.team_catalog}.${var.team_schema}.bronze_documents bd
+          ON sf.path = bd.source_path
+
+  alerts:
+    bronze_backlog_alert:
+      display_name: "${var.team_name} Bronze Backlog Threshold"
+      query_id: "${resources.queries.bronze_backlog_check.id}"
+      condition:
+        op: "GREATER_THAN"
+        operand:
+          column:
+            name: "pending_files"
+        threshold:
+          value:
+            double_value: "${var.backlog_alert_threshold}"
+      notification:
+        subscriptions:
+          - destination_id: "${var.alert_notification_destination_id}"
