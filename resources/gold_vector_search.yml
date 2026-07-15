@@ -1,0 +1,16 @@
+resources:
+  vector_search_endpoints:
+    team_vector_search:
+      name: "${bundle.target}_${var.team_name}_vector_search"
+      endpoint_type: "STANDARD"
+
+  jobs:
+    create_gold_index:
+      name: "${bundle.target}_${var.team_name}_create_gold_index"
+      tasks:
+        - task_key: create_index
+          notebook_task:
+            notebook_path: "../src/gold/create_index.py"
+      # Triggered manually or as part of deploy -- NOT scheduled
+      # continuously. This job's job is to ensure the index exists,
+      # not to run repeatedly.
