@@ -1,0 +1,16 @@
+resources:
+  pipelines:
+    silver_chunking:
+      name: "${bundle.target}_${var.team_name}_silver_chunking"
+      catalog: "${var.team_catalog}"
+      schema: "${var.team_schema}"
+      serverless: true
+      configuration:
+        "silver.chunking_config_path": "/Workspace${workspace.file_path}/config/silver/chunking.yml"
+      libraries:
+        - notebook:
+            path: "../src/silver/chunking_pipeline.py"
+      environment:
+        dependencies:
+          - pyyaml
+      channel: "CURRENT"
