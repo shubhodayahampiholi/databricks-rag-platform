@@ -158,13 +158,14 @@ check before deciding whether to re-run an expensive extraction call.
 
 ```
 silver_extracted_documents
-├── content_hash            string   -- PK; same hash from bronze
+├── content_hash             string   -- PK; same hash from bronze
+├── file_type                string
 ├── extraction_method_used   string
 ├── extraction_status        string  -- "success" | "empty" | "corrupt"
-├── full_text                 string
-├── sections                   array<struct<heading: string, text: string, position: int>>
-├── error_message              string  -- nullable
-└── extracted_at                timestamp
+├── full_text                string
+├── sections                 array<struct<heading: string, text: string, position: int>>
+├── error_message            string  -- nullable
+└── extracted_at             timestamp
 ```
 Decoupling this from chunking's own output has a real practical benefit:
 if a chunking strategy changes later, re-chunking can read already-

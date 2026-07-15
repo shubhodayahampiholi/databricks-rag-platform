@@ -1,0 +1,11 @@
+chunking:
+  defaults:
+    pdf:  { method: "recursive_structure_aware", chunk_size: 512, overlap: 50 }
+    docx: { method: "heading_hierarchy_split", chunk_size: 512, overlap: 50 }
+    xlsx: { method: "table_aware_row_based", chunk_size: null, overlap: null }
+    text: { method: "fixed_size_with_overlap", chunk_size: 512, overlap: 50 }
+  overrides:
+    - extraction_method_used: "azure_document_intelligence_ocr"
+      method: "semantic_split"
+      chunk_size: 256
+      overlap: 25

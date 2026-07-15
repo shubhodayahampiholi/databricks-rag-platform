@@ -91,6 +91,7 @@ def silver_extracted_documents():
 
     return extracted.select(
         F.col("content_hash"),
+        F.col("file_type"), 
         F.col("extraction.extraction_method_used").alias("extraction_method_used"),
         F.col("extraction.extraction_status").alias("extraction_status"),
         F.col("extraction.full_text").alias("full_text"),
