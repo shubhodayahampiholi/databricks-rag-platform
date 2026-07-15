@@ -1,0 +1,4 @@
+variables:
+  embedding_model:
+    description: "The single embedding model this gold pipeline uses. Changing this requires a blue-green index migration, not a config edit -- see docs/DESIGN.md."
+    default: "databricks-gte-large-en"

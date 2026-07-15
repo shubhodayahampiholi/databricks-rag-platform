@@ -1,0 +1,13 @@
+resources:
+  pipelines:
+    gold_embedding:
+      name: "${bundle.target}_${var.team_name}_gold_embedding"
+      catalog: "${var.team_catalog}"
+      schema: "${var.team_schema}"
+      serverless: true
+      configuration:
+        "gold.embedding_model": "${var.embedding_model}"
+      libraries:
+        - notebook:
+            path: "../src/gold/embedding_pipeline.py"
+      channel: "CURRENT"

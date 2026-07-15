@@ -264,18 +264,14 @@ deactivated_at                timestamp  -- nullable
 
 ### Embedding model selection
 
-Same two-tier pattern again. Models are registered in **MLflow Model
-Registry** under a stable alias (e.g. `prod`), not a raw version number, so
-the platform can promote a new model version without every team's config
-changing.
-
 ```yaml
+# Embedding model is a per-pipeline-deployment setting, not a per-document
+# override -- a single gold pipeline produces exactly one index, and an
+# index can only hold vectors from one model. A team needing more than
+# one embedding model deploys more than one gold pipeline, each with its
+# own value here, each producing its own separate index.
 embedding:
-  default:
-    model: "gte-large-en"
-  overrides:
-    - path_prefix: "financial_exports/"
-      model: "code-aware-embed-v2"
+  model: "gte-large-en"
 ```
 
 **Critical property, not shared with extraction/chunking**: two different
