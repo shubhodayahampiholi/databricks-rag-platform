@@ -1,0 +1,15 @@
+extraction:
+  defaults:
+    pdf: "pymupdf_standard"
+    docx: "python_docx_standard"
+    xlsx: "openpyxl_standard"
+    text: "plain_text_decode"
+  overrides:
+    - path_prefix: "contracts_scanned/"
+      file_type: "pdf"
+      method: "pymupdf_ocr"
+      on_failure: "atomic"
+    - path_prefix: "reports_digital/"
+      file_type: "pdf"
+      method: "pymupdf_standard"
+      on_failure: "atomic"

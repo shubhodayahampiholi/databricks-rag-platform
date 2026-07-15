@@ -21,6 +21,10 @@ of [`docs/DESIGN.md`](docs/DESIGN.md).
   this is the prerequisite for Autoloader's file-notification ingestion
   mode used throughout bronze.
 
+  **For the full permissions setup — Access Connector roles, Storage
+  Credential, and the trusted-services network exception — see
+  [`src/bronze/AUTOLOADER_SETUP.md`](src/bronze/AUTOLOADER_SETUP.md).**
+
 ## 3. Catalog and schema
 
 - A dedicated Unity Catalog **catalog** and **schema** for the team.
