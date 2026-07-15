@@ -21,17 +21,18 @@ def gold_embeddings():
     # would silently duplicate every chunk once per instance. Citation
     # display should honestly show every source a piece of content is
     # currently known under, not one arbitrarily picked path.
-    instances = dlt.read("silver_document_instances").filter(F.col("is_active")).groupBy(
-        "content_hash"
-    ).agg(
-        F.collect_list(
-            F.struct(F.col("source_path"), F.col("file_name"))
-        ).alias("source_references"),
-        # resolved_acl_group deliberately NOT resolved here -- ACL is
-        # deferred. Every row's group is currently NULL; do not build
-        # anything downstream that assumes otherwise.
-        F.first("resolved_acl_group").alias("resolved_acl_group"),
-    )
+    instances = dlt.read("silver_document_instances").filter(F.col("is_active")).groupBy("content_hash").agg(
+                F.collect_list(
+                F.struct(F.col("source_path"), F.col("file_name"))
+            ).alias("source_references"),
+            F.collect_set("resolved_acl_group").alias("_distinct_acl_groups"),
+        ).withColumn(
+            "acl_conflict_detected", F.size(F.col("_distinct_acl_groups")) > 1
+        ).withColumn(
+            "resolved_acl_group",
+            F.when(F.col("acl_conflict_detected"), F.lit(None))
+            .otherwise(F.element_at(F.col("_distinct_acl_groups"), 1)),
+        ).drop("_distinct_acl_groups")
 
     joined = chunks.join(instances, "content_hash", "inner")
 
